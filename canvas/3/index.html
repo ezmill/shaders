@@ -17,7 +17,7 @@
 <script type="text/javascript" src="fboTextureUtils.js"></script>
 </head>
 <body>
-	<img src="charteuse.png" id="pic" alt="" width="1439" height="731" style="display:none;">
+	<img src="smudge.png" id="pic" alt="" width="1439" height="731" style="display:none;">
 	<canvas id="drawingCanvas" width="1439" height="731"></canvas>
 	<canvas id="canvas" style="background:black; position:absolute;top:0;left:0;z-index:0; width:100%; height:100%;" width="1439" height="731"></canvas>
 <script id="baseFs" type="x-shader/x-fragment">
@@ -77,14 +77,14 @@ void main() {
   kernel2[3] = -1.0; kernel2[4] = 0.5; kernel2[5] = 1.0;
   kernel2[6] = 0.0; kernel2[7] = 1.0; kernel2[8] = 2.0;
 
-  kernel3[0] = 0.0; kernel3[1] = 1.0; kernel3[2] = 0.0;
-  kernel3[3] = 1.0; kernel3[4] = -4.0; kernel3[5] = 1.0;
-  kernel3[6] = 0.0; kernel3[7] = 1.0; kernel3[8] = 0.0;
+  kernel3[0] = -1.0; kernel3[1] = 1.0; kernel3[2] = -1.0;
+  kernel3[3] = 1.0; kernel3[4] = 4.0; kernel3[5] = 1.0;
+  kernel3[6] = -1.0; kernel3[7] = 1.0; kernel3[8] = -1.0;
 
   for(int i = 0; i <9; i++){
-	  // sum += texture2D(u_image,v_texCoord+offset[i])*(kernel[i]);
+	  sum += texture2D(u_image,v_texCoord+offset[i])*(kernel[i]);
 	  sum += texture2D(u_image,v_texCoord+offset[i])*(kernel2[i]);
-	  // sum += texture2D(u_image,v_texCoord+offset[i])*(kernel3[i]);
+	  // sum += texture2D(u_image,v_texCoord+offset[i])*(kernel2[i]);
   }
   // input0 *=0.2;
   gl_FragColor = sum;
@@ -128,7 +128,7 @@ void main(){
     vec2 tc = v_texCoord;
     vec4 look = texture2D(u_image2,tc);//sample repos texture
     vec2 offs = vec2(look.y-look.x,look.w-look.z);
-	offs*=0.003;
+	offs*=0.008;
     vec2 coord = offs+tc;  //relative coordinates
     
     vec4 repos = texture2D(u_image, coord);
@@ -162,7 +162,7 @@ uniform vec2 mouse;
 
 varying vec2 v_texCoord;
 varying vec4 vColor;
-vec2 scale = vec2(1.0,1.0);
+vec2 scale = vec2(1.001,0.999);
 void main() {
 
    gl_Position = vec4(pos.x*scale.x,pos.y*scale.y,pos.z,1.0);
@@ -251,7 +251,7 @@ function main(){
 
 		if(doDraw){
 			drawCtx.beginPath();
-	        drawCtx.rect(mouseX/2, mouseY, window.innerWidth/2, 20);
+	        drawCtx.rect(mouseX, mouseY/2, 20, window.innerHeight/2);
 
 			// drawCtx.arc(mouseX, mouseY, 20.0, 0, 2*Math.PI, false);
 			// drawCtx.drawRect(mouseX, mouseY, 100,100);

@@ -17,7 +17,7 @@
 <script type="text/javascript" src="fboTextureUtils.js"></script>
 </head>
 <body>
-	<img src="charteuse.png" id="pic" alt="" width="1439" height="731" style="display:none;">
+	<img src="smudge.png" id="pic" alt="" width="1439" height="731" style="display:none;">
 	<canvas id="drawingCanvas" width="1439" height="731"></canvas>
 	<canvas id="canvas" style="background:black; position:absolute;top:0;left:0;z-index:0; width:100%; height:100%;" width="1439" height="731"></canvas>
 <script id="baseFs" type="x-shader/x-fragment">
@@ -74,7 +74,7 @@ void main() {
   kernel[6] = 1.0; kernel[7] = 1.0; kernel[8] = 1.0;
 
   kernel2[0] = -2.0; kernel2[1] = -1.0; kernel2[2] = 0.0;
-  kernel2[3] = -1.0; kernel2[4] = 0.5; kernel2[5] = 1.0;
+  kernel2[3] = -1.0; kernel2[4] = 1.0; kernel2[5] = 1.0;
   kernel2[6] = 0.0; kernel2[7] = 1.0; kernel2[8] = 2.0;
 
   kernel3[0] = 0.0; kernel3[1] = 1.0; kernel3[2] = 0.0;
@@ -82,7 +82,7 @@ void main() {
   kernel3[6] = 0.0; kernel3[7] = 1.0; kernel3[8] = 0.0;
 
   for(int i = 0; i <9; i++){
-	  // sum += texture2D(u_image,v_texCoord+offset[i])*(kernel[i]);
+	  sum += texture2D(u_image,v_texCoord+offset[i])*(kernel[i]);
 	  sum += texture2D(u_image,v_texCoord+offset[i])*(kernel2[i]);
 	  // sum += texture2D(u_image,v_texCoord+offset[i])*(kernel3[i]);
   }
@@ -128,7 +128,30 @@ void main(){
     vec2 tc = v_texCoord;
     vec4 look = texture2D(u_image2,tc);//sample repos texture
     vec2 offs = vec2(look.y-look.x,look.w-look.z);
-	offs*=0.003;
+	offs*=0.007;
+    vec2 coord = offs+tc;  //relative coordinates
+    
+    vec4 repos = texture2D(u_image, coord);
+    
+    gl_FragColor = repos;    
+} 
+
+</script>
+<script type="x-shader/x-fragment" id="repos2Fs">
+  precision mediump float;
+varying vec2 v_texCoord;
+
+uniform vec2 amt;
+uniform sampler2D u_image;
+uniform sampler2D u_image2;
+
+
+void main(){
+
+    vec2 tc = v_texCoord;
+    vec4 look = texture2D(u_image2,tc);//sample repos texture
+    vec2 offs = vec2(look.y-look.x,look.w-look.z);
+	offs*=-0.009;
     vec2 coord = offs+tc;  //relative coordinates
     
     vec4 repos = texture2D(u_image, coord);
@@ -162,7 +185,7 @@ uniform vec2 mouse;
 
 varying vec2 v_texCoord;
 varying vec4 vColor;
-vec2 scale = vec2(1.0,1.0);
+vec2 scale = vec2(1.00,1.00);
 void main() {
 
    gl_Position = vec4(pos.x*scale.x,pos.y*scale.y,pos.z,1.0);
@@ -174,8 +197,8 @@ void main() {
 <script type="text/javascript">
 //globals
 var gl, cBB;
-var baseProgram, blurProgram, diffProgram, reposProgram;
-var feedback, blurFbo, diffFbo, reposFbo;
+var baseProgram, blurProgram, diffProgram, reposProgram, repos2Program;
+var feedback, blurFbo, diffFbo, reposFbo, repos2Fbo;
 var camTex;
 var time = 0.0;
 var video = document.createElement("video");
@@ -212,18 +235,21 @@ function main(){
 	blurFbo = new pxFbo();
 	diffFbo = new pxFbo();
 	reposFbo = new pxFbo();
+	repos2Fbo = new pxFbo();
 
 	//allocate fbos
 	feedback.allocate(canvas.width, canvas.height);
 	blurFbo.allocate(canvas.width, canvas.height);
 	diffFbo.allocate(canvas.width, canvas.height);
 	reposFbo.allocate(canvas.width, canvas.height);
+	repos2Fbo.allocate(canvas.width, canvas.height);
 
 	//create shaders
 	var baseFs = createShaderFromScriptElement(gl, "baseFs");
 	var blurFs = createShaderFromScriptElement(gl, "blurFs");
 	var diffFs = createShaderFromScriptElement(gl, "diffFs");
 	var reposFs = createShaderFromScriptElement(gl, "reposFs");
+	var repos2Fs = createShaderFromScriptElement(gl, "repos2Fs");
 
 	var baseVs = createShaderFromScriptElement(gl, "baseVs");
 	var translateVs = createShaderFromScriptElement(gl, "translateVs");
@@ -234,6 +260,7 @@ function main(){
 	blurProgram = createProgram(gl, [baseVs, blurFs]);
 	diffProgram = createProgram(gl, [translateVs, diffFs]);
 	reposProgram = createProgram(gl, [translateVs, reposFs]);
+	repos2Program = createProgram(gl, [baseVs, repos2Fs]);
 
 	//blur program
 	gl.useProgram(blurProgram);
@@ -251,9 +278,9 @@ function main(){
 
 		if(doDraw){
 			drawCtx.beginPath();
-	        drawCtx.rect(mouseX/2, mouseY, window.innerWidth/2, 20);
+	        // drawCtx.rect(mouseX/2, mouseY, window.innerWidth/2, 20);
 
-			// drawCtx.arc(mouseX, mouseY, 20.0, 0, 2*Math.PI, false);
+			drawCtx.arc(mouseX, mouseY, 20.0, 0, 2*Math.PI, false);
 			// drawCtx.drawRect(mouseX, mouseY, 100,100);
 			drawCtx.fillStyle= pat;
 			drawCtx.fill();
@@ -264,6 +291,7 @@ function main(){
 		blurFbo.start();
 		cBB.draw(blurProgram, blurFbo.texture);
 
+		// repos2Fbo.start();
 
 		// colorFbo.start();
 		// blurFbo.draw2(colorProgram, colorFbo.texture);
@@ -276,11 +304,20 @@ function main(){
 		gl.enable(gl.BLEND);
 		 gl.blendFunc(gl.SRC_COLOR, gl.ONE_MINUS_SRC_COLOR);
 		cBB.draw(baseProgram, camTex);
+		diffFbo.draw(repos2Program);
 		diffFbo.draw(reposProgram);
+
+		repos2Fbo.start();
+		blurFbo.draw(reposProgram);
+
+		// blurFbo.draw(repos2Program)
 		// gl.disable(gl.BLEND);
 
 		reposFbo.start();
-		blurFbo.draw(baseProgram)
+		blurFbo.draw(baseProgram);
+
+
+		// blurFbo.draw(baseProgram);
 
 		gl.bindFramebuffer(gl.FRAMEBUFFER, null);
 		feedback.draw(blurProgram);
