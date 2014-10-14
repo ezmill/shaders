@@ -1,6 +1,6 @@
 <html>
 <head>
-	<title>2</title>
+	<title>4</title>
 	<style type="text/css">
 		body{
 			margin: 0;
@@ -278,9 +278,9 @@ function main(){
 
 		if(doDraw){
 			drawCtx.beginPath();
-	        // drawCtx.rect(mouseX/2, mouseY, window.innerWidth/2, 20);
+	        drawCtx.rect(mouseX, mouseY, 40,40);
 
-			drawCtx.arc(mouseX, mouseY, 20.0, 0, 2*Math.PI, false);
+			// drawCtx.arc(mouseX, mouseY, 20.0, 0, 2*Math.PI, false);
 			// drawCtx.drawRect(mouseX, mouseY, 100,100);
 			drawCtx.fillStyle= pat;
 			drawCtx.fill();
